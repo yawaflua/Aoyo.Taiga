@@ -1,0 +1,6 @@
+@Aoyo.Taiga_HostAddress = http://localhost:8080
+
+GET {{Aoyo.Taiga_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
