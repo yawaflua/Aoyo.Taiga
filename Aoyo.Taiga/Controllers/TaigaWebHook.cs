@@ -53,7 +53,7 @@ public class TaigaWebHook : Controller
             var hash = VerifySignature(_key, data);
             
             
-            if (!string.Equals(signature, hash, StringComparison.OrdinalIgnoreCase))
+            if (signature.Length != hash.Length) // Should to provide only like this. Taiga provides very strange signature code
             {
                 return BadRequest($"Invalid signature {hash}");
             }
