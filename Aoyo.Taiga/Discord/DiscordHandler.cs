@@ -40,7 +40,24 @@ public class DiscordHandler(
 
     private Task ClientOnLog(LogMessage arg)
     {
-        logger.LogInformation(exception: arg.Exception, message:arg.Message);
+        switch (arg.Severity)
+        {
+            case LogSeverity.Info:
+                logger.LogInformation(arg.Message);
+                break;
+            case LogSeverity.Warning:
+                logger.LogWarning(arg.Message);
+                break;
+            case LogSeverity.Error:
+                logger.LogError(exception: arg.Exception, message: arg.Message);
+                break;
+            case LogSeverity.Critical:
+                logger.LogCritical(arg.Exception, message: arg.Message);
+                break;
+            default:
+                logger.LogTrace(arg.Message);
+                break;
+        }
         return Task.CompletedTask;
     }
 

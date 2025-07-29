@@ -20,9 +20,11 @@ RUN dotnet publish "./Aoyo.Taiga.csproj" -c $BUILD_CONFIGURATION -o /app/publish
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-RUN sudo apt-get update && \
-    sudo apt-get install -y curl && \
-    sudo rm -rf /var/lib/apt/lists/*
+USER root
+RUN apt-get update && \
+    apt-get install -y curl && \
+    rm -rf /var/lib/apt/lists/*
+USER $APP_UID
     
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD curl -f http://localhost:8080/aoyo/health || exit 1
 
