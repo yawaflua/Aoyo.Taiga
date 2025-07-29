@@ -9,6 +9,11 @@ public class Program
         WebHost.
             CreateDefaultBuilder(args).
             UseStartup<Startup>().
+            ConfigureAppConfiguration(k => 
+                k.
+                    AddJsonFile("appsettings.json").
+                    AddJsonFile("appsettings.Development.json").
+                    AddEnvironmentVariables()).
             UseKestrel(
                 l => 
                     l.ListenAnyIP(8080)

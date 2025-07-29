@@ -1,11 +1,14 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Aoyo.Taiga.WebHookTypes;
 using Discord;
 using Discord.WebSocket;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace Aoyo.Taiga.Controllers;
 
@@ -40,17 +43,20 @@ public class TaigaWebHook : Controller
     {
         try
         {
-            var signature = Request.Headers["X-TAIGA-WEBHOOK-SIGNATURE"].First()!;
+            var signature = Request.Headers["X-TAIGA-WEBHOOK-SIGNATURE"].First();
 
+            if (signature == null) return BadRequest("Provide signature first");
+            
             using var reader = new StreamReader(Request.Body);
             var data = await reader.ReadToEndAsync();
             _logger.LogInformation(data);
-                
-            if (_config.GetValue<string>("ASPNETCORE_ENVIRONMENT") == "Production")
-                if (!VerifySignature(_key, data, signature))
-                {
-                    return BadRequest("Invalid signature");
-                }
+            var hash = VerifySignature(_key, data);
+            
+            
+            if (!string.Equals(signature, hash, StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest($"Invalid signature {hash}");
+            }
 
 
             var webhookType = DetermineWebhookType(data);
@@ -66,6 +72,8 @@ public class TaigaWebHook : Controller
                 case "task":
                     await HandleTaskWebhook(data);
                     break;
+                case "test":
+                    return Ok("test success!");
                 default:
                     _logger.LogWarning("Unsupported type of webhook: {WebhookType}", webhookType);
                     return BadRequest($"Unsupported type of webhook: {webhookType}");
@@ -79,14 +87,13 @@ public class TaigaWebHook : Controller
             return BadRequest(exception.Message);
         }
     }
-
-    private bool VerifySignature(string key, string data, string signature)
+    
+    private string VerifySignature(string key, string data)
     {
-        using HMACSHA1 hmac = new HMACSHA1(Encoding.UTF8.GetBytes(key));
-        var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
-        var computedHash = Convert.ToHexString(hashBytes).ToLower();
-        
-        return computedHash.Length == signature.Length;
+        using var hmac = new HMACSHA1(Encoding.UTF8.GetBytes(key));
+        var hashBytes = hmac.ComputeHash(Encoding.ASCII.GetBytes(data));
+        var computedSignature = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+        return computedSignature;
     }
     
     private async Task HandleUserStoryWebhook(string json)
@@ -386,13 +393,13 @@ public class TaigaWebHook : Controller
                 
                 if (_logChannel == null)
                 {
-                    _logger.LogError("Не удалось получить Discord канал с ID: {ChannelId}", _id);
+                    _logger.LogError("Can`t get channel with ID: {ChannelId}", _id);
                     return;
                 }
 
                 await _logChannel.SendMessageAsync(embed:
                     new EmbedBuilder()
-                        .WithAuthor(payload.By.Username, payload.By.Photo)
+                        .WithAuthor(payload.By.Username, payload.By.GravatarId != null ? "https://gravatar.com/avatar/" + payload.By.GravatarId : payload.By.Photo)
                         .WithTitle($"{payload.Action} {payload.Type.ToLower()}")
                         .WithDescription(payload.Description)
                         .WithColor(payload.Color)

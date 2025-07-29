@@ -1,0 +1,7 @@
+﻿services:
+  aoyo.taiga:
+    image: aoyo.taiga
+    build:
+      context: .
+      dockerfile: Aoyo.Taiga/Dockerfile
+

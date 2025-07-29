@@ -18,4 +18,6 @@ public class TaigaUser
         
     [JsonPropertyName("photo")]
     public string Photo { get; set; }
+    [JsonPropertyName("gravatar_id")]
+    public string? GravatarId { get; set; }
 }

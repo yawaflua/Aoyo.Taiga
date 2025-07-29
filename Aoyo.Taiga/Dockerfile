@@ -22,7 +22,7 @@ WORKDIR /app
 COPY --from=publish /app/publish .
 RUN apt-get update && \
     apt-get install -y curl && \
-    rm -rf /var/lib/apt/lists/* \
+    rm -rf /var/lib/apt/lists/*
     
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD curl -f http://localhost:8080/aoyo/health || exit 1
 
